@@ -13,7 +13,7 @@ dotenv.load_dotenv()
 
 # Set org ID and API key
 openai.organization = os.environ['OPENAI_ORG'] # "<YOUR_OPENAI_ORG_ID>"
-openai.api_key = os.environ['OPENAI_ORG'] # "<YOUR_OPENAI_API_KEY>"
+openai.api_key = os.environ['OPENAI_KEY'] # "<YOUR_OPENAI_API_KEY>"
 
 # Initialise session state variables
 if 'generated' not in st.session_state:
