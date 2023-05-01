@@ -58,6 +58,7 @@ def ask_gpt(message):
 # Function to reset chat history
 def reset_history():
     global messages_history
+    global agent
     messages_history = [system_message, initial_assistant_message]
     agent = Agent(faiss=book_library.faiss)
 
