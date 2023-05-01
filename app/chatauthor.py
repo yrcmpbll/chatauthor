@@ -4,6 +4,8 @@ import openai
 import time
 import dotenv
 import os
+from agent import Agent
+from library import Library
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
@@ -11,6 +13,13 @@ dotenv.load_dotenv()
 # Set OpenAI organization ID and API key from environment variables
 openai.organization = os.environ['OPENAI_ORG']
 openai.api_key = os.environ['OPENAI_KEY']
+
+# Set agent up
+# Read FAISS
+book_library = Library()
+book_library.from_vectorstore()
+# Load agent
+agent = Agent(faiss=book_library.faiss, author_names=[os.environ['FIRST_NAME'], os.environ['LAST_NAME']])
 
 # Define the initial system message
 system_message = {"role": "system", "content": "You are a helpful assistant."}
@@ -30,12 +39,8 @@ def ask_gpt(message):
     global messages_history
     messages_history.append({"role": "user", "content": message})
     
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages_history
-    )
-    
-    bot_message = response['choices'][0]['message']['content']
+    bot_message = agent.prompt(message=message)
+
     messages_history.append({"role": "assistant", "content": bot_message})
     
     return bot_message
@@ -44,6 +49,7 @@ def ask_gpt(message):
 def reset_history():
     global messages_history
     messages_history = [system_message, initial_assistant_message]
+    agent = Agent(faiss=book_library.faiss)
 
 # Function to generate the message pairs for the chat component
 def generate_chat_pairs():
@@ -75,5 +81,7 @@ with gr.Blocks() as interface:
     textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[textbox, chatbot], queue=False)
     clear_button_click = clear_button.click(reset_history, inputs=[], outputs=[chatbot], queue=False)
 
+# Close ports for avoiding problems
+gr.close_all()
 # Launch the Gradio interface
 interface.launch(server_name="0.0.0.0", server_port=7860)
