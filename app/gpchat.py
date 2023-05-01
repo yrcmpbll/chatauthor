@@ -71,11 +71,12 @@ with gr.Blocks() as interface:
         # bot_message = ask_gpt(user_message)
         # return [(user_message, bot_message)]  # Return as a list of tuples
         ask_gpt(user_message)
-        return generate_chat_pairs()
+        return gr.update(value=''), generate_chat_pairs()
 
     # Set up event listeners for Textbox submit and Clear Button click events
     # textbox.submit(lambda x: gr.update(value=''), [],[textbox])
-    textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[chatbot], queue=False).then(lambda x: gr.update(value=''), inputs=None, outputs=[textbox])
+    # https://discuss.huggingface.co/t/unable-to-clear-input-after-submit/33543/4
+    textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[textbox, chatbot], queue=False)# .then(lambda x: gr.update(value=''), inputs=None, outputs=[textbox])
     clear_button_click = clear_button.click(reset_history, inputs=[], outputs=[chatbot], queue=False)
 
 # Launch the Gradio interface
