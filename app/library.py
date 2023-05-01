@@ -23,7 +23,7 @@ class Library:
         self.faiss = None
     
     def from_vectorstore(self, local_faiss_store='faiss.vectorstore'):
-        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_API_KEY'])
+        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_KEY'])
         self.faiss = FAISS.load_local(local_faiss_store, embeddings=self.embeddings)
     
     def create_index(self):
@@ -84,7 +84,7 @@ class Library:
     
     def __embed_book_chunks(self):
 
-        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_API_KEY'])
+        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_KEY'])
 
         texts_to_embed = list()
         metadata_list = list()
