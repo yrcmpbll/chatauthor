@@ -84,4 +84,4 @@ with gr.Blocks() as interface:
 # Close ports for avoiding problems
 gr.close_all()
 # Launch the Gradio interface
-interface.launch(server_name="0.0.0.0", server_port=7860)
+interface.launch(server_name="0.0.0.0", server_port=7860) #, auth=(os.environ['USER'], os.environ['PASS']))
