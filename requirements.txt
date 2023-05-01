@@ -7,3 +7,5 @@ ebooklib==0.18
 pypdf2==3.0.1
 tiktoken==0.3.3
 langchain==0.0.154
+faiss-cpu==1.7.4
+beautifulsoup4==4.12.2
