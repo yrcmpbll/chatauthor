@@ -1,115 +1,83 @@
+# Import necessary libraries
+import gradio as gr
 import openai
-import streamlit as st
-from streamlit_chat import message
+import time
 import dotenv
 import os
 
-# Setting page title and header
-st.set_page_config(page_title="AVA", page_icon=":robot_face:")
-st.markdown("<h1 style='text-align: center;'>AVA - a totally harmless chatbot 😬</h1>", unsafe_allow_html=True)
-
-# Load secrets into environment variables
+# Load environment variables from .env file
 dotenv.load_dotenv()
 
-# Set org ID and API key
-openai.organization = os.environ['OPENAI_ORG'] # "<YOUR_OPENAI_ORG_ID>"
-openai.api_key = os.environ['OPENAI_KEY'] # "<YOUR_OPENAI_API_KEY>"
+# Set OpenAI organization ID and API key from environment variables
+openai.organization = os.environ['OPENAI_ORG']
+openai.api_key = os.environ['OPENAI_KEY']
 
-# Initialise session state variables
-if 'generated' not in st.session_state:
-    st.session_state['generated'] = []
-if 'past' not in st.session_state:
-    st.session_state['past'] = []
-if 'messages' not in st.session_state:
-    st.session_state['messages'] = [
-        {"role": "system", "content": "You are a helpful assistant."}
-    ]
-if 'model_name' not in st.session_state:
-    st.session_state['model_name'] = []
-if 'cost' not in st.session_state:
-    st.session_state['cost'] = []
-if 'total_tokens' not in st.session_state:
-    st.session_state['total_tokens'] = []
-if 'total_cost' not in st.session_state:
-    st.session_state['total_cost'] = 0.0
+# Define the initial system message
+system_message = {"role": "system", "content": "You are a helpful assistant."}
 
-# Sidebar - let user choose model, show total cost of current conversation, and let user clear the current conversation
-st.sidebar.title("Sidebar")
-model_name = st.sidebar.radio("Choose a model:", ("GPT-3.5", "GPT-4"))
-counter_placeholder = st.sidebar.empty()
-counter_placeholder.write(f"Total cost of this conversation: ${st.session_state['total_cost']:.5f}")
-clear_button = st.sidebar.button("Clear Conversation", key="clear")
+# Initialize messages_history with the system message
+messages_history = [system_message]
 
-# Map model names to OpenAI model IDs
-if model_name == "GPT-3.5":
-    model = "gpt-3.5-turbo"
-else:
-    model = "gpt-4"
+# Add an initial assistant message
+initial_assistant_message = {
+    "role": "assistant",
+    "content": "Hello! I am a helpful assistant. How can I help you today?"
+}
+messages_history.append(initial_assistant_message)
 
-# reset everything
-if clear_button:
-    st.session_state['generated'] = []
-    st.session_state['past'] = []
-    st.session_state['messages'] = [
-        {"role": "system", "content": "You are a helpful assistant."}
-    ]
-    st.session_state['number_tokens'] = []
-    st.session_state['model_name'] = []
-    st.session_state['cost'] = []
-    st.session_state['total_cost'] = 0.0
-    st.session_state['total_tokens'] = []
-    counter_placeholder.write(f"Total cost of this conversation: ${st.session_state['total_cost']:.5f}")
-
-
-# generate a response
-def generate_response(prompt):
-    st.session_state['messages'].append({"role": "user", "content": prompt})
-
-    completion = openai.ChatCompletion.create(
-        model=model,
-        messages=st.session_state['messages']
+# Function to send user message and conversation history to OpenAI API and get a response
+def ask_gpt(message):
+    global messages_history
+    messages_history.append({"role": "user", "content": message})
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages_history
     )
-    response = completion.choices[0].message.content
-    st.session_state['messages'].append({"role": "assistant", "content": response})
+    
+    bot_message = response['choices'][0]['message']['content']
+    messages_history.append({"role": "assistant", "content": bot_message})
+    
+    return bot_message
 
-    # print(st.session_state['messages'])
-    total_tokens = completion.usage.total_tokens
-    prompt_tokens = completion.usage.prompt_tokens
-    completion_tokens = completion.usage.completion_tokens
-    return response, total_tokens, prompt_tokens, completion_tokens
+# Function to reset chat history
+def reset_history():
+    global messages_history
+    messages_history = [system_message, initial_assistant_message]
 
+# Function to generate the message pairs for the chat component
+def generate_chat_pairs():
+    global messages_history
+    chat_history_in_tuples = list()
+    for message_pair in grouped(messages_history[2:], 2):
+        m_user, m_bot = message_pair
+        chat_history_in_tuples.append((m_user['content'], m_bot['content']))
+    return chat_history_in_tuples
 
-# container for chat history
-response_container = st.container()
-# container for text box
-container = st.container()
+# Function to group elements of an iterable
+def grouped(iterable, n):
+    "s -> (s0,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), (s2n,s2n+1,s2n+2,...s3n-1), ..."
+    return zip(*[iter(iterable)]*n)
 
-with container:
-    with st.form(key='my_form', clear_on_submit=True):
-        user_input = st.text_area("You:", key='input', height=100)
-        submit_button = st.form_submit_button(label='Send')
+# Create Gradio Blocks interface
+with gr.Blocks() as interface:
+    # Create interface elements (Chatbot, Textbox, Clear Button)
+    chatbot = gr.Chatbot()
+    textbox = gr.Textbox()
+    clear_button = gr.Button("Clear")
 
-    if submit_button and user_input:
-        output, total_tokens, prompt_tokens, completion_tokens = generate_response(user_input)
-        st.session_state['past'].append(user_input)
-        st.session_state['generated'].append(output)
-        st.session_state['model_name'].append(model_name)
-        st.session_state['total_tokens'].append(total_tokens)
+    # Function to handle user message input and bot response
+    def process_message(user_message):
+        # bot_message = ask_gpt(user_message)
+        # return [(user_message, bot_message)]  # Return as a list of tuples
+        ask_gpt(user_message)
+        return gr.update(value=''), generate_chat_pairs()
 
-        # from https://openai.com/pricing#language-models
-        if model_name == "GPT-3.5":
-            cost = total_tokens * 0.002 / 1000
-        else:
-            cost = (prompt_tokens * 0.03 + completion_tokens * 0.06) / 1000
+    # Set up event listeners for Textbox submit and Clear Button click events
+    # textbox.submit(lambda x: gr.update(value=''), [],[textbox])
+    # https://discuss.huggingface.co/t/unable-to-clear-input-after-submit/33543/4
+    textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[textbox, chatbot], queue=False)# .then(lambda x: gr.update(value=''), inputs=None, outputs=[textbox])
+    clear_button_click = clear_button.click(reset_history, inputs=[], outputs=[chatbot], queue=False)
 
-        st.session_state['cost'].append(cost)
-        st.session_state['total_cost'] += cost
-
-if st.session_state['generated']:
-    with response_container:
-        for i in range(len(st.session_state['generated'])):
-            message(st.session_state["past"][i], is_user=True, key=str(i) + '_user')
-            message(st.session_state["generated"][i], key=str(i))
-            st.write(
-                f"Model used: {st.session_state['model_name'][i]}; Number of tokens: {st.session_state['total_tokens'][i]}; Cost: ${st.session_state['cost'][i]:.5f}")
-            counter_placeholder.write(f"Total cost of this conversation: ${st.session_state['total_cost']:.5f}")
+# Launch the Gradio interface
+interface.launch(server_name="0.0.0.0", server_port=7860)
