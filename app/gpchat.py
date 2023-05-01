@@ -49,7 +49,7 @@ def reset_history():
 def generate_chat_pairs():
     global messages_history
     chat_history_in_tuples = list()
-    for message_pair in grouped(messages_history, 2):
+    for message_pair in grouped(messages_history[2:], 2):
         m_user, m_bot = message_pair
         chat_history_in_tuples.append((m_user['content'], m_bot['content']))
     return chat_history_in_tuples
@@ -75,7 +75,7 @@ with gr.Blocks() as interface:
 
     # Set up event listeners for Textbox submit and Clear Button click events
     textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[chatbot], queue=False)
-    clear_button_click = clear_button.click(reset_history, inputs=[clear_button], outputs=[chatbot], queue=False)
+    clear_button_click = clear_button.click(reset_history, inputs=[], outputs=[chatbot], queue=False)
 
 # Launch the Gradio interface
 interface.launch(server_name="0.0.0.0", server_port=7860)
