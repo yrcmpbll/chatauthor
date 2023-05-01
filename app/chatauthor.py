@@ -6,6 +6,7 @@ import dotenv
 import os
 from agent import Agent
 from library import Library
+from translator import Translator
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
@@ -20,6 +21,8 @@ book_library = Library()
 book_library.from_vectorstore()
 # Load agent
 agent = Agent(faiss=book_library.faiss, author_names=[os.environ['FIRST_NAME'], os.environ['LAST_NAME']])
+# Load translator
+translator = Translator()
 
 # Define the initial system message
 system_message = {"role": "system", "content": "You are a helpful assistant."}
@@ -39,11 +42,13 @@ def ask_gpt(message):
     global messages_history
     messages_history.append({"role": "user", "content": message})
     
-    bot_message = agent.prompt(message=message)
+    bot_message = agent.prompt(message=translator.to_english(message))
 
-    messages_history.append({"role": "assistant", "content": bot_message})
+    german_answer = translator.to_german(bot_message)
+
+    messages_history.append({"role": "assistant", "content": german_answer})
     
-    return bot_message
+    return german_answer
 
 # Function to reset chat history
 def reset_history():
