@@ -74,7 +74,8 @@ with gr.Blocks() as interface:
         return generate_chat_pairs()
 
     # Set up event listeners for Textbox submit and Clear Button click events
-    textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[chatbot], queue=False)
+    # textbox.submit(lambda x: gr.update(value=''), [],[textbox])
+    textbox_submit = textbox.submit(process_message, inputs=[textbox], outputs=[chatbot], queue=False).then(lambda x: gr.update(value=''), inputs=None, outputs=[textbox])
     clear_button_click = clear_button.click(reset_history, inputs=[], outputs=[chatbot], queue=False)
 
 # Launch the Gradio interface
