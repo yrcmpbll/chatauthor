@@ -20,6 +20,11 @@ class Library:
         self.book_chunks = None
         self.tiktokenizer = None
         self.embeddings = None
+        self.faiss = None
+    
+    def from_vectorstore(self, local_faiss_store='faiss.vectorstore'):
+        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_API_KEY'])
+        self.faiss = FAISS.load_local(local_faiss_store, embeddings=self.embeddings)
     
     def create_index(self):
         self.__read_books()
@@ -88,8 +93,8 @@ class Library:
             texts_to_embed.append(_d['text'])
             metadata_list.append({k:v for k,v in _d.items() if 'text' not in k})
 
-        faiss = FAISS.from_texts(texts_to_embed, self.embeddings, metadatas=metadata_list)
-        faiss.save_local('faiss.vectorstore')
+        self.faiss = FAISS.from_texts(texts_to_embed, self.embeddings, metadatas=metadata_list)
+        self.faiss.save_local('faiss.vectorstore')
 
 
 def chapter_to_str(chapter):
