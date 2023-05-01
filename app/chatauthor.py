@@ -81,6 +81,10 @@ def grouped(iterable, n):
 
 # Create Gradio Blocks interface
 with gr.Blocks() as interface:
+
+    # Show some image to make it nice
+    gr.Image('images/comic1.jpg')
+
     # Create interface elements (Chatbot, Textbox, Clear Button)
     chatbot = gr.Chatbot()
     textbox = gr.Textbox()
