@@ -65,7 +65,9 @@ class Agent:
                         Use this tool also for follow up questions from the user."""
 
         author_db_tool = Tool(
-            func=self.retriever.run, description=tool_desc, name=f"{self.author_names[0]} {self.author_names[1]} DB"
+            func=self.retriever.run,
+            description=tool_desc,
+            name=f"{self.author_names[0]} {self.author_names[1]} DB",
         )
 
         self.tools.append(author_db_tool)
